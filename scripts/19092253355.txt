@@ -1,0 +1,18 @@
+{
+  "phonenumber": "19092253355",
+  "contact_id": "2",
+  "fullname": "Eddie Nunez",
+  "email": "",
+  "contact_company": "",
+  "contact_position": "",
+  "company": "Your Company",
+  "voiceId": "21m00Tcm4TlvDq8ikWAM",
+  "stability": 90,
+  "similarity_boost": 20,
+  "style_exaggeration": 10,
+  "content": "Hello this message is for Eddie Nunez, This is a final notice regarding your documents requiring your signature. We have made two delivery attempts, and your urgent action is needed. If we do not hear from you promptly, we will have to forward your file for processing without your participation. You may call now to schedule a time and location that suits you. Please consider this a final attempt for service. It is urgent to give your immediate attention to this matter. You may dial 2109001566 and reference file number 1321321 Again, the phone number is 2109001566 and reference file number 1321321 if you would like this information text to you press 5 now. Good bye",
+  "todo": "Your todo",
+  "notodo": "Your notodo",
+  "campaign_id": "your-campaign-id",
+  "ai_profile_name": "your-ai-profile"
+}

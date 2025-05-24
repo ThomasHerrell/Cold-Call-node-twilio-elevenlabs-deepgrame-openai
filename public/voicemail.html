@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voicemail Sender</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            display: none;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        .voicemail-list {
+            margin-top: 30px;
+        }
+        .voicemail-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            margin-right: 5px;
+            border-radius: 4px 4px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-bottom: none;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Voicemail Sender</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="send">Send Voicemail</div>
+            <div class="tab" data-tab="carrier">Carrier Direct</div>
+            <div class="tab" data-tab="sms">SMS Alternative</div>
+            <div class="tab" data-tab="list">Voicemail List</div>
+        </div>
+        
+        <div class="tab-content active" id="send-tab">
+            <form id="voicemail-form">
+                <div class="form-group">
+                    <label for="phone">Phone Number:</label>
+                    <input type="text" id="phone" name="phone" required placeholder="Enter phone number (e.g. +1234567890)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="message">Voicemail Message:</label>
+                    <textarea id="message" name="message" placeholder="Enter your voicemail message text here"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="greeting">Custom Greeting (optional):</label>
+                    <input type="text" id="greeting" name="greeting" placeholder="e.g. Hello John">
+                </div>
+                
+                <div class="form-group">
+                    <label for="ending">Custom Ending (optional):</label>
+                    <input type="text" id="ending" name="ending" placeholder="e.g. Please call us back at your convenience">
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="skip-lookup"> Skip contact lookup
+                    </label>
+                </div>
+                
+                <button type="submit">Send Voicemail</button>
+            </form>
+            
+            <div class="response" id="response"></div>
+        </div>
+        
+        <div class="tab-content" id="carrier-tab">
+            <h2>Carrier-Specific Direct Voicemail</h2>
+            <p>Use this method for US/Canada carriers or when other methods fail.</p>
+            
+            <form id="carrier-vm-form">
+                <div class="form-group">
+                    <label for="carrier-phone">Phone Number:</label>
+                    <input type="text" id="carrier-phone" name="carrier-phone" required placeholder="Enter phone number (e.g. +1234567890)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="carrier-message">Message:</label>
+                    <textarea id="carrier-message" name="carrier-message" placeholder="Enter your voicemail message text here (or leave blank for default)"></textarea>
+                </div>
+                
+                <button type="submit">Send Direct Voicemail</button>
+            </form>
+            
+            <div class="response" id="carrier-response"></div>
+        </div>
+        
+        <div class="tab-content" id="sms-tab">
+            <h2>SMS Voicemail Alternative</h2>
+            <p>When voicemail isn't working, send a text message instead.</p>
+            
+            <form id="sms-vm-form">
+                <div class="form-group">
+                    <label for="sms-phone">Phone Number:</label>
+                    <input type="text" id="sms-phone" name="sms-phone" required placeholder="Enter phone number (e.g. +1234567890)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="sms-message">Message:</label>
+                    <textarea id="sms-message" name="sms-message" placeholder="Enter your text message here (or leave blank for default)"></textarea>
+                </div>
+                
+                <button type="submit">Send SMS</button>
+            </form>
+            
+            <div class="response" id="sms-response"></div>
+        </div>
+        
+        <div class="tab-content" id="list-tab">
+            <h2>Recent Voicemails</h2>
+            <div class="voicemail-list" id="voicemail-list">
+                <p>Loading voicemails...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab functionality
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab content
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Show selected tab content
+                    const tabName = this.getAttribute('data-tab');
+                    document.getElementById(tabName + '-tab').classList.add('active');
+                    
+                    // Load voicemails when list tab is clicked
+                    if (tabName === 'list') {
+                        loadVoicemails();
+                    }
+                });
+            });
+            
+            // Form submission
+            const form = document.getElementById('voicemail-form');
+            const responseDiv = document.getElementById('response');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phoneNumber = document.getElementById('phone').value;
+                const message = document.getElementById('message').value;
+                const greeting = document.getElementById('greeting').value;
+                const ending = document.getElementById('ending').value;
+                const skipLookup = document.getElementById('skip-lookup').checked;
+                
+                // Prepare request body
+                const requestBody = {
+                    phoneNumber: phoneNumber,
+                    skipContactLookup: skipLookup
+                };
+                
+                if (message) requestBody.message = message;
+                if (greeting) requestBody.customGreeting = greeting;
+                if (ending) requestBody.customEnding = ending;
+                
+                // Send request to server
+                fetch('/api/voicemail/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    responseDiv.textContent = data.message || 'Voicemail sent successfully!';
+                    responseDiv.style.display = 'block';
+                    responseDiv.classList.remove('error');
+                    
+                    if (!data.success) {
+                        responseDiv.classList.add('error');
+                    }
+                })
+                .catch(error => {
+                    responseDiv.textContent = 'Error sending voicemail: ' + error.message;
+                    responseDiv.style.display = 'block';
+                    responseDiv.classList.add('error');
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Function to load voicemail list
+            function loadVoicemails() {
+                const voicemailList = document.getElementById('voicemail-list');
+                voicemailList.innerHTML = '<p>Loading voicemails...</p>';
+                
+                fetch('/api/voicemail/list')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.data && data.data.length > 0) {
+                            voicemailList.innerHTML = '';
+                            
+                            data.data.forEach(vm => {
+                                const item = document.createElement('div');
+                                item.className = 'voicemail-item';
+                                
+                                const date = new Date(vm.timestamp).toLocaleString();
+                                
+                                let html = `
+                                    <p><strong>Date:</strong> ${date}</p>
+                                    <p><strong>Call SID:</strong> ${vm.callSid}</p>
+                                    <p><strong>Status:</strong> ${vm.status}</p>
+                                `;
+                                
+                                if (vm.recordingUrl) {
+                                    html += `
+                                        <p><strong>Recording:</strong></p>
+                                        <audio controls>
+                                            <source src="${vm.recordingUrl}" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    `;
+                                }
+                                
+                                item.innerHTML = html;
+                                voicemailList.appendChild(item);
+                            });
+                        } else {
+                            voicemailList.innerHTML = '<p>No voicemails found.</p>';
+                        }
+                    })
+                    .catch(error => {
+                        voicemailList.innerHTML = '<p>Error loading voicemails: ' + error.message + '</p>';
+                        console.error('Error:', error);
+                    });
+            }
+            
+            // Form submission for carrier-specific voicemail
+            const carrierForm = document.getElementById('carrier-vm-form');
+            const carrierResponseDiv = document.getElementById('carrier-response');
+            
+            carrierForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phoneNumber = document.getElementById('carrier-phone').value;
+                const message = document.getElementById('carrier-message').value;
+                
+                // Prepare request body
+                const requestBody = {
+                    phoneNumber: phoneNumber
+                };
+                
+                if (message) requestBody.message = message;
+                
+                // Send request to server
+                fetch('/api/voicemail/direct-vm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    carrierResponseDiv.textContent = data.message || 'Direct voicemail sent successfully!';
+                    carrierResponseDiv.style.display = 'block';
+                    carrierResponseDiv.classList.remove('error');
+                    
+                    if (!data.success) {
+                        carrierResponseDiv.classList.add('error');
+                    }
+                })
+                .catch(error => {
+                    carrierResponseDiv.textContent = 'Error sending direct voicemail: ' + error.message;
+                    carrierResponseDiv.style.display = 'block';
+                    carrierResponseDiv.classList.add('error');
+                    console.error('Error:', error);
+                });
+            });
+            
+            // Form submission for SMS voicemail alternative
+            const smsForm = document.getElementById('sms-vm-form');
+            const smsResponseDiv = document.getElementById('sms-response');
+            
+            smsForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phoneNumber = document.getElementById('sms-phone').value;
+                const message = document.getElementById('sms-message').value;
+                
+                // Prepare request body
+                const requestBody = {
+                    phoneNumber: phoneNumber
+                };
+                
+                if (message) requestBody.message = message;
+                
+                // Send request to server
+                fetch('/api/voicemail/sms-vm', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    smsResponseDiv.textContent = data.message || 'SMS sent successfully!';
+                    smsResponseDiv.style.display = 'block';
+                    smsResponseDiv.classList.remove('error');
+                    
+                    if (!data.success) {
+                        smsResponseDiv.classList.add('error');
+                    }
+                })
+                .catch(error => {
+                    smsResponseDiv.textContent = 'Error sending SMS: ' + error.message;
+                    smsResponseDiv.style.display = 'block';
+                    smsResponseDiv.classList.add('error');
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

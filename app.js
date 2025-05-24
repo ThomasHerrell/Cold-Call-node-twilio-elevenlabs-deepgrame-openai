@@ -18,7 +18,9 @@ const { get_Avaliable_time } = require("./services/getAvaliableTime");
 const { makeschedule } = require("./services/make-schedule");
 const makeCallRouter = require("./makeCall");
 const callStatusRouter = require("./routes/callStatus");
+const voicemailRouter = require("./routes/voicemail");
 const VoiceResponse = require("twilio").twiml.VoiceResponse;
+const path = require("path");
 
 const fs = require('fs');
 var phonenumberlist;
@@ -61,6 +63,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api", makeCallRouter);
 app.use("/api", callStatusRouter);
+app.use("/api/voicemail", voicemailRouter);
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 console.log(process.env.TWILIO_ACCOUNT_SID);
 

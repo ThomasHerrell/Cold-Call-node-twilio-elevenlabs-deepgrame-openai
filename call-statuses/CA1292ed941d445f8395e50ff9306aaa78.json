@@ -1,0 +1,20 @@
+{
+  "id": 1748080167491,
+  "clientName": "John Doe",
+  "phone": "12088262461",
+  "status": "in-progress",
+  "template": "Hello John Doe, this is a reminder about your upcoming appointment regarding file 1236434. Please confirm your availability.",
+  "timestamp": "2025-05-24T09:49:30.763Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "1",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": 0,
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "ringing",
+    "timestamp": "2025-05-24T09:49:30.763Z"
+  }
+}

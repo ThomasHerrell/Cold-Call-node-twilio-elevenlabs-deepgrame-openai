@@ -1,0 +1,25 @@
+{
+  "id": 1747443360419,
+  "clientName": "Eddie Nunez",
+  "phone": "19092253355",
+  "status": "completed",
+  "template": [
+    "Hello this message is for John Doe, This is a final notice regarding your documents requiring your signature. We have made two delivery attempts, and your urgent action is needed. If we do not hear from you promptly, we will have to forward your file for processing without your participation. You may call now to schedule a time and location that suits you. Please consider this a final attempt for service. It is urgent to give your immediate attention to this matter. You may dial 2109001566 and reference file number F1001 Again, the phone number is 2109001566 and reference file number F1001 if you would like this information text to you press 5 now. Good bye\n",
+    "Hello this message is for Eddie Nunez, This is a final notice regarding your documents requiring your signature. We have made two delivery attempts, and your urgent action is needed. If we do not hear from you promptly, we will have to forward your file for processing without your participation. You may call now to schedule a time and location that suits you. Please consider this a final attempt for service. It is urgent to give your immediate attention to this matter. You may dial 2109001566 and reference file number F1002 Again, the phone number is 2109001566 and reference file number F1002 if you would like this information text to you press 5 now. Good bye\n",
+    "Hello this message is for Kay, This is a final notice regarding your documents requiring your signature. We have made two delivery attempts, and your urgent action is needed. If we do not hear from you promptly, we will have to forward your file for processing without your participation. You may call now to schedule a time and location that suits you. Please consider this a final attempt for service. It is urgent to give your immediate attention to this matter. You may dial 2109001566 and reference file number F1003 Again, the phone number is 2109001566 and reference file number F1003 if you would like this information text to you press 5 now. Good bye\n"
+  ],
+  "timestamp": "2025-05-17T00:58:30.569Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "2",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": "121",
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "completed",
+    "timestamp": "2025-05-17T00:58:30.569Z",
+    "sipResponseCode": "200"
+  }
+}

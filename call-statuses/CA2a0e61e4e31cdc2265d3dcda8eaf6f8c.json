@@ -1,0 +1,23 @@
+{
+  "id": 1747886841994,
+  "clientName": "Jane Smith",
+  "phone": "+1 555-234-5678",
+  "status": "failed",
+  "template": "Hello Jane Smith, this is a reminder about your upcoming appointment regarding file 1236434. Please confirm your availability.",
+  "timestamp": "2025-05-22T04:07:22.389Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "2",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": "0",
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "failed",
+    "timestamp": "2025-05-22T04:07:22.389Z",
+    "errorCode": "13224",
+    "errorMessage": "invalid phone number ",
+    "sipResponseCode": "404"
+  }
+}

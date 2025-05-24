@@ -1,0 +1,15 @@
+{
+  "id": 1748110889437,
+  "clientName": "Unknown",
+  "phone": "+12088262461",
+  "status": "failed",
+  "timestamp": "2025-05-24T18:21:29.920Z",
+  "duration": "0",
+  "direction": "outbound-api",
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "failed",
+    "timestamp": "2025-05-24T18:21:29.920Z",
+    "sipResponseCode": "608"
+  }
+}

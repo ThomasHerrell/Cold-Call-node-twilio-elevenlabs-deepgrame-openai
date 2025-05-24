@@ -1,0 +1,26 @@
+{
+  "id": 1748024160037,
+  "clientName": "John Doe",
+  "phone": "12088262461",
+  "status": "failed",
+  "template": "Hello John Doe, this is a reminder about your upcoming appointment regarding file 1236434. Please confirm your availability.",
+  "timestamp": "2025-05-23T18:16:54.905Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "1",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": "0",
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "no-answer",
+    "timestamp": "2025-05-23T18:16:54.905Z",
+    "sipResponseCode": "487"
+  },
+  "voicemail": {
+    "sid": "CA53d7913a842cb2fb6a515298068cb8cb",
+    "timestamp": "2025-05-23T18:16:58.577Z",
+    "status": "failed"
+  }
+}

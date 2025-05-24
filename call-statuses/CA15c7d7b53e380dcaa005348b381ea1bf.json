@@ -1,0 +1,22 @@
+{
+  "id": 1747444433660,
+  "clientName": "John Doe",
+  "phone": "+12109001566",
+  "status": "in-progress",
+  "template": [
+    "Hello this message is for  John Doe,\nThis is a final notice regarding your documents requiring your signature. We have made two delivery attempts, and your urgent action is needed. If we do not hear from you promptly, we will have to forward your file for processing without your participation.\nYou may call now to schedule a time and location that suits you. Please consider this a final attempt for service.\nIt is urgent to give your immediate attention to this matter. You may dial 2109001566 and reference file number F1001 Again, the phone number is 2109001566 and reference file number F1001 if you would like this information text to you press 5 now. Good bye"
+  ],
+  "timestamp": "2025-05-17T01:14:01.798Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "1",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": 0,
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "in-progress",
+    "timestamp": "2025-05-17T01:14:01.798Z"
+  }
+}

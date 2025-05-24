@@ -1,0 +1,23 @@
+{
+  "id": 1747442734357,
+  "clientName": "John Doe",
+  "phone": "+12109001566",
+  "status": "failed",
+  "template": [
+    "Hello John Doe, this is a reminder about your upcoming appointment regarding file F1001. Please confirm your availability."
+  ],
+  "timestamp": "2025-05-17T00:46:06.696Z",
+  "direction": "outbound-api",
+  "metadata": {
+    "contactId": "1",
+    "campaignId": "your-campaign-id",
+    "aiProfile": "your-ai-profile"
+  },
+  "duration": "0",
+  "parentCallSid": null,
+  "lastUpdate": {
+    "status": "busy",
+    "timestamp": "2025-05-17T00:46:06.696Z",
+    "sipResponseCode": "486"
+  }
+}
