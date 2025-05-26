@@ -86,7 +86,8 @@ router.post('/make-call', async (req, res) => {
             method: 'POST',
             statusCallback: `https://${process.env.SERVER}/api/call-status`,
             statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-            statusCallbackMethod: 'POST'
+            statusCallbackMethod: 'POST',
+            timeout: 10
         });
 
         console.log('Created call with SID:', call.sid);

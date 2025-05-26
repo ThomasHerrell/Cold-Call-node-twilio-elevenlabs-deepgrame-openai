@@ -173,6 +173,7 @@ app.post("/outcoming", async (req, res) => {
     calendarlink = contactData.calendarlink;
     campaign_id = contactData.campaign_id;
     content = contactData.content;
+    console.log(`Content_content : ${content}`)
   } else {
     console.error(`File  not found.`);
     res.status(404).send('Contact file not found');
@@ -182,11 +183,8 @@ app.post("/outcoming", async (req, res) => {
   try {
     callstatus = "Not answered";
     const response = new VoiceResponse();
-    response.say(content);
-    console.log(`Content_content : ${content}`)
-    
-    // const connect = response.connect();
-    // connect.stream({ url: `wss://${process.env.SERVER}/connection` });
+    const connect = response.connect();
+    connect.stream({ url: `wss://${process.env.SERVER}/connection` });
     
     res.type("text/xml");
     res.end(response.toString());
