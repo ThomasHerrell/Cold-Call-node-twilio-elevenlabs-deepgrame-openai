@@ -85,7 +85,7 @@ router.post('/make-call', async (req, res) => {
             record: true,
             method: 'POST',
             statusCallback: `https://${process.env.SERVER}/api/call-status`,
-            statusCallbackEvent: ['no-answer', 'busy', 'failed', 'canceled'],
+            statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
             statusCallbackMethod: 'POST'
         });
 
