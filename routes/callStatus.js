@@ -16,13 +16,13 @@ if (!fs.existsSync(STATUS_DIR)) {
     fs.mkdirSync(STATUS_DIR);
 }
 
-// 상태 저장 함수
+
 const saveCallStatus = (callSid, status) => {
     const filePath = path.join(STATUS_DIR, `${callSid}.json`);
     fs.writeFileSync(filePath, JSON.stringify(status, null, 2), 'utf8');
 };
 
-// 상태 로드 함수
+
 const loadCallStatus = (callSid) => {
     const filePath = path.join(STATUS_DIR, `${callSid}.json`);
     if (fs.existsSync(filePath)) {
@@ -31,7 +31,7 @@ const loadCallStatus = (callSid) => {
     return null;
 };
 
-// 모든 상태 로드 함수
+
 const loadAllCallStatuses = () => {
     const statuses = {};
     if (fs.existsSync(STATUS_DIR)) {
@@ -45,55 +45,10 @@ const loadAllCallStatuses = () => {
     return statuses;
 };
 
-// 전화 상태를 저장할 임시 저장소
-const callStatuses = new Map();
 
-// 전화 시작 API
-router.post('/start-call', async (req, res) => {
-    try {
-        const { phone, clientName, template } = req.body;
-        
-        const call = await client.calls.create({
-            url: `https://${process.env.SERVER}/outcoming?phonenumber=${encodeURIComponent(phone)}`,
-            to: phone,
-            from: process.env.FROM_NUMBER,
-            record: true,
-            method: 'POST',
-            statusCallback: `https://${process.env.SERVER}/call-status`,
-            statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
-            statusCallbackMethod: 'POST'
-        });
 
-        // 초기 상태 저장
-        callStatuses.set(call.sid, {
-            id: Date.now(),
-            clientName,
-            phone,
-            status: 'pending',
-            template,
-            timestamp: new Date().toISOString()
-        });
-
-        res.json({
-            success: true,
-            data: {
-                callSid: call.sid,
-                status: 'pending'
-            }
-        });
-    } catch (error) {
-        console.error('Error starting call:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to start call'
-        });
-    }
-});
-
-// 전화 상태 업데이트
 router.post('/call-status', async (req, res) => {
     try {
-        // 요청 정보 로깅
         console.log('Received request headers:', req.headers);
         console.log('Raw request body:', req.body);
         console.log('Received request query:', req.query);
@@ -107,7 +62,6 @@ router.post('/call-status', async (req, res) => {
             return res.status(400).send('Missing CallSid');
         }
 
-        // Twilio의 요청 본문에서 데이터 추출
         const {
             CallStatus: callStatus,
             CallDuration: callDuration,
@@ -119,7 +73,7 @@ router.post('/call-status', async (req, res) => {
 
         console.log('Processing call status update for SID:', callSid, 'with status:', callStatus);
 
-        // 상태 매핑
+
         const statusMap = {
             'initiated': 'pending',
             'queued': 'pending',
@@ -134,7 +88,6 @@ router.post('/call-status', async (req, res) => {
 
         const mappedStatus = statusMap[callStatus] || 'failed';
 
-        // 현재 상태 로드
         const currentStatus = loadCallStatus(callSid) || {
             id: Date.now(),
             clientName: 'Unknown',
@@ -143,7 +96,6 @@ router.post('/call-status', async (req, res) => {
             timestamp: new Date().toISOString()
         };
 
-        // 상태 업데이트
         const updatedStatus = {
             ...currentStatus,
             status: mappedStatus,
@@ -184,7 +136,6 @@ router.post('/call-status', async (req, res) => {
             }
         }
 
-        // 상태 저장
         saveCallStatus(callSid, updatedStatus);
 
         console.log('Call Status Update:', {
@@ -200,7 +151,6 @@ router.post('/call-status', async (req, res) => {
             sipResponseCode: req.body.SipResponseCode
         });
 
-        // Twilio에 200 응답 반환
         res.status(200).send('OK');
     } catch (error) {
         console.error('Error processing call status update:', error);
@@ -281,7 +231,6 @@ router.post('/voicemail-status', async (req, res) => {
     }
 });
 
-// 전화 상태 조회
 router.get('/call-status/:callSid', (req, res) => {
     try {
         const callSid = req.params.callSid;
@@ -307,7 +256,6 @@ router.get('/call-status/:callSid', (req, res) => {
     }
 });
 
-// 모든 전화 상태 조회
 router.get('/call-statuses', (req, res) => {
     try {
         const allStatuses = loadAllCallStatuses();
