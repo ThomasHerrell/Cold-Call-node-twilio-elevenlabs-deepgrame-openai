@@ -165,11 +165,9 @@ router.post('/call-status', async (req, res) => {
             // Get the contact information for this phone number
             try {
                 const phoneNumber = to;
-                // Load contact info using our voicemail service
-                const contactInfo = loadContactInfo(phoneNumber);
                 
                 // Leave voicemail using our service
-                const voicemailSid = await leaveVoicemail(phoneNumber, contactInfo, client);
+                const voicemailSid = await leaveVoicemail(phoneNumber, client);
                 
                 if (voicemailSid) {
                     // Update the status to include voicemail information

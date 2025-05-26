@@ -18,7 +18,6 @@ const { get_Avaliable_time } = require("./services/getAvaliableTime");
 const { makeschedule } = require("./services/make-schedule");
 const makeCallRouter = require("./makeCall");
 const callStatusRouter = require("./routes/callStatus");
-const voicemailRouter = require("./routes/voicemail");
 const VoiceResponse = require("twilio").twiml.VoiceResponse;
 const path = require("path");
 
@@ -63,7 +62,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api", makeCallRouter);
 app.use("/api", callStatusRouter);
-app.use("/api/voicemail", voicemailRouter);
+
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, 'public')));
@@ -133,7 +132,7 @@ app.post("/incoming", async (req, res) => {
     const connectInGather = gather.connect();
     connectInGather.stream({ url: `wss://${process.env.SERVER}/connection` });
 
-    response.say('입력이 없어 전화를 종료합니다.');
+    response.say('no response');
 
     const connect = response.connect();
     const uniqueConnectionId = `${phonenumber}-${Date.now()}`;
@@ -174,7 +173,6 @@ app.post("/outcoming", async (req, res) => {
     calendarlink = contactData.calendarlink;
     campaign_id = contactData.campaign_id;
     content = contactData.content;
-    console.log(`Content_content : ${content}`)
   } else {
     console.error(`File  not found.`);
     res.status(404).send('Contact file not found');
@@ -184,10 +182,11 @@ app.post("/outcoming", async (req, res) => {
   try {
     callstatus = "Not answered";
     const response = new VoiceResponse();
+    response.say(content);
+    console.log(`Content_content : ${content}`)
     
-    const connect = response.connect();
-    const uniqueConnectionId = `${phonenumber}-${Date.now()}`;
-    connect.stream({ url: `wss://${process.env.SERVER}/connection` });
+    // const connect = response.connect();
+    // connect.stream({ url: `wss://${process.env.SERVER}/connection` });
     
     res.type("text/xml");
     res.end(response.toString());

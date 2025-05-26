@@ -13,34 +13,9 @@ const generateVoicemailTwiML = (contactInfo) => {
     // Add a longer initial pause to wait for voicemail system to be ready
     twiml.pause({ length: 3 });
     
-    // Send pound key to skip voicemail greeting on some systems
-    twiml.play({ digits: '#' });
-    
-    // Add another pause
-    twiml.pause({ length: 1 });
-    
-    // Get contact name or use generic greeting
-    const greeting = contactInfo?.fullname ? `Hello ${contactInfo.fullname}` : 'Hello';
-    
-    // Get company name or use default
-    const company = contactInfo?.company || 'our company';
-
-    // Get AI agent name if available
-    const aiName = contactInfo?.ai_profile_name || '';
-
     // Customize message based on available contact information
-    let message = `${greeting}, this is ${aiName} from ${company}. `;
-    message += 'We tried to reach you earlier but were unable to connect. ';
-    
-    // Add customized content if available
-    if (contactInfo?.content) {
-        // Extract a brief summary from content (first 100 characters)
-        const summary = contactInfo.content.substring(0, 100) + '...';
-        message += `I wanted to discuss ${summary} `;
-    }
-    
-    message += `Please call us back at your earliest convenience at ${process.env.FROM_NUMBER} to discuss further. `;
-    message += 'Thank you and have a great day.';
+    let message = `Hello, this is a final notice regarding your documents requiring your signature. `;
+    message += 'We have made two delivery attempts, and your urgent action is needed. ';
 
     // Create the TwiML response with slower rate and lower pitch for better voicemail capture
     twiml.say({
@@ -67,13 +42,20 @@ const generateVoicemailTwiML = (contactInfo) => {
 /**
  * Leaves a voicemail for a phone number using the provided contact information
  * @param {string} phoneNumber - The phone number to leave a voicemail for
- * @param {Object} contactInfo - Contact information for customization
  * @param {Object} twilioClient - Twilio client instance
  * @returns {Promise<string|null>} - The SID of the voicemail call or null if failed
  */
-const leaveVoicemail = async (phoneNumber, contactInfo, twilioClient) => {
+const leaveVoicemail = async (phoneNumber, twilioClient) => {
     try {
         console.log(`Attempting to leave voicemail for ${phoneNumber}`);
+        
+        // Try to load contact info but don't require it
+        let contactInfo = null;
+        try {
+            contactInfo = loadContactInfo(phoneNumber);
+        } catch (error) {
+            console.log(`Could not load contact info for ${phoneNumber}, using default message`);
+        }
         
         // Generate TwiML for voicemail
         const messageContent = generateVoicemailTwiML(contactInfo);
@@ -124,53 +106,9 @@ const leaveVoicemail = async (phoneNumber, contactInfo, twilioClient) => {
  * @param {string} phoneNumber - Phone number to get contact info for
  * @returns {Object|null} - Contact information or null if not found
  */
-const loadContactInfo = (phoneNumber) => {
-    try {
-        // Normalize phone number to remove any formatting
-        const normalizedPhone = phoneNumber.replace(/\D/g, '');
-        
-        // Search for contact file with this phone number
-        const scriptsDir = path.join(__dirname, '..', 'scripts');
-        
-        if (fs.existsSync(scriptsDir)) {
-            // Try exact match first
-            const exactFilePath = path.join(scriptsDir, `${phoneNumber}.txt`);
-            if (fs.existsSync(exactFilePath)) {
-                return JSON.parse(fs.readFileSync(exactFilePath, 'utf8'));
-            }
-            
-            // Try normalized phone number
-            const normalizedFilePath = path.join(scriptsDir, `${normalizedPhone}.txt`);
-            if (fs.existsSync(normalizedFilePath)) {
-                return JSON.parse(fs.readFileSync(normalizedFilePath, 'utf8'));
-            }
-            
-            // Try to find by matching the last digits if no exact match
-            const files = fs.readdirSync(scriptsDir);
-            for (const file of files) {
-                if (file.endsWith('.txt') && !file.includes('_')) {
-                    const filePhone = file.replace('.txt', '');
-                    const normalizedFilePhone = filePhone.replace(/\D/g, '');
-                    
-                    // Match if last 8 digits are the same
-                    if (normalizedFilePhone.length >= 8 && 
-                        normalizedPhone.length >= 8 &&
-                        normalizedFilePhone.slice(-8) === normalizedPhone.slice(-8)) {
-                        return JSON.parse(fs.readFileSync(path.join(scriptsDir, file), 'utf8'));
-                    }
-                }
-            }
-        }
-        
-        return null;
-    } catch (error) {
-        console.error('Error loading contact information:', error);
-        return null;
-    }
-};
+
 
 module.exports = {
     leaveVoicemail,
     generateVoicemailTwiML,
-    loadContactInfo
 }; 
