@@ -1,8 +1,0 @@
-{
-  "id": 1747393265973,
-  "clientName": "Jane Smith",
-  "phone": "+1 555-234-5678",
-  "status": "pending",
-  "template": "Hello {name}, this is a reminder about your upcoming appointment regarding file {fileNumber}. Please confirm your availability.",
-  "timestamp": "2025-05-16T11:01:05.973Z"
-}

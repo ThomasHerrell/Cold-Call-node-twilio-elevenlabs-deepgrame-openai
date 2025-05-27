@@ -1,0 +1,18 @@
+{
+  "phonenumber": "12088262462",
+  "contact_id": "2",
+  "fullname": "",
+  "email": "",
+  "contact_company": "",
+  "contact_position": "",
+  "company": "Your Company",
+  "voiceId": "21m00Tcm4TlvDq8ikWAM",
+  "stability": 90,
+  "similarity_boost": 20,
+  "style_exaggeration": 10,
+  "content": "Hello John Doe, this is a reminder about your upcoming appointment tomorrow. Your file number is 1236434. if you have any questions, please call us back at 12088262462.",
+  "todo": "Your todo",
+  "notodo": "Your notodo",
+  "campaign_id": "your-campaign-id",
+  "ai_profile_name": "your-ai-profile"
+}

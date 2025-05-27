@@ -1,0 +1,18 @@
+{
+  "phonenumber": "+12088269461",
+  "contact_id": "2",
+  "fullname": "Jhon David",
+  "email": "",
+  "contact_company": "",
+  "contact_position": "",
+  "company": "Your Company",
+  "voiceId": "21m00Tcm4TlvDq8ikWAM",
+  "stability": 90,
+  "similarity_boost": 20,
+  "style_exaggeration": 10,
+  "content": "Hello Jhon David, this is a reminder about your upcoming appointment regarding file 23232. Please confirm your availability.",
+  "todo": "Your todo",
+  "notodo": "Your notodo",
+  "campaign_id": "your-campaign-id",
+  "ai_profile_name": "your-ai-profile"
+}

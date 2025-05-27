@@ -5,7 +5,7 @@ npm-debug.log*
 
 # Dependency directories
 node_modules/
-
+call-status/
 # Environment variables
 .env
 
