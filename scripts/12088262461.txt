@@ -1,7 +1,7 @@
 {
   "phonenumber": "12088262461",
   "contact_id": "1",
-  "fullname": "John Doe",
+  "fullname": "",
   "email": "",
   "contact_company": "",
   "contact_position": "",
@@ -10,7 +10,7 @@
   "stability": 90,
   "similarity_boost": 20,
   "style_exaggeration": 10,
-  "content": "Hello John Doe, this is a reminder about your upcoming appointment regarding file 1236434. Please confirm your availability.",
+  "content": "Hello John Doe, this is a reminder about your upcoming appointment tomorrow. Your file number is 1236434. if you have any questions, please call us back at 12088262461.",
   "todo": "Your todo",
   "notodo": "Your notodo",
   "campaign_id": "your-campaign-id",

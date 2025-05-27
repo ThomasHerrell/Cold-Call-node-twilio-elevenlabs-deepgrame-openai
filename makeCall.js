@@ -72,22 +72,29 @@ router.post('/make-call', async (req, res) => {
 
   console.log(`contact : ${JSON.stringify(contact)}`);  
   console.log(phonenumberlist.length, contact_id_list.length);
-
+  let numberIndex = 0;
+  
+  // Convert FROM_NUMBERS string to array if it's not already an array
+  const fromNumbers = Array.isArray(process.env.FROM_NUMBERS) 
+    ? process.env.FROM_NUMBERS 
+    : process.env.FROM_NUMBERS ? process.env.FROM_NUMBERS.split(',') : [];
+  
   try {
     const callPromises = contact.map(async (contactItem) => {
         console.log(`phonenumber : ${contactItem.phonenumber}`);
-        
+        const fromNumber = fromNumbers.length > 0 ? fromNumbers[numberIndex % fromNumbers.length] : '';
+        numberIndex++;
         // Create call with status callback
         const call = await client.calls.create({
             url: `https://${process.env.SERVER}/outcoming?phonenumber=${encodeURIComponent(contactItem.phonenumber)}`,
             to: contactItem.phonenumber,
-            from: process.env.FROM_NUMBER,
+            from: fromNumber,
             record: true,
             method: 'POST',
             statusCallback: `https://${process.env.SERVER}/api/call-status`,
             statusCallbackEvent: ['initiated', 'ringing', 'answered', 'completed'],
             statusCallbackMethod: 'POST',
-            timeout: 10
+            timeout: 30
         });
 
         console.log('Created call with SID:', call.sid);

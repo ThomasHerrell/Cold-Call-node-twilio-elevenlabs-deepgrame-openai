@@ -87,64 +87,11 @@ if (brazilHour >= 5 && brazilHour < 12) {
 }
 
 app.post("/incoming", async (req, res) => {
-  const avaliable_times = await get_Avaliable_time();
-  avaliable_times_info = `Avaliable times to schedule: "${avaliable_times}"`;
-  console.log(`avaliable_times_info : ${avaliable_times_info}`);
-  let phonenumber = req.query.phonenumber; // Assuming contact_ID is passed in the query to identify the file
-  const filePath = `./scripts/${phonenumber}.txt`;
-  console.log(`filePath : ${filePath}`)
-
-  if (fs.existsSync(filePath)) {
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    const contactData = JSON.parse(fileContent);
-
-    phonenumber = "+55 11 91234-5678";
-    todo = "Lembre-se de perguntar sobre o interesse do usuário no nosso novo produto de automação de marketing.";
-    notodo = "Não mencione promoções anteriores ou produtos descontinuados.";
-    email = "joao.silva@empresaexemplo.com";
-    company = "Empresa Exemplo S.A.";
-    contact_position = "Diretor de Marketing";
-    contact_company = "TechBr Solutions";
-    contact_id = "c1234567890";
-    voiceId = "br-FelipeNeural";
-    style_exaggeration = 1.2;
-    stability = 0.85;
-    similarity_boost = 0.9;
-    campaign_id = "cmp-987654321";
-    
-    content = fs.readFileSync(`./scripts/${ai_profile_name}.txt`, 'utf8'); 
-    console.log(`Content_content : ${content}`)
-  } else {
-    console.error(`File  not found.`);
-    res.status(404).send('Contact file not found');
-    return;
-  }
-
-  try {
-    callstatus = "Not answered";
-    const response = new VoiceResponse();
-    const gather = response.gather({
-      input: 'dtmf speech',
-      timeout: 5,
-      action: '/gather-handler',
-    });
-
-    const connectInGather = gather.connect();
-    connectInGather.stream({ url: `wss://${process.env.SERVER}/connection` });
-
-    response.say('no response');
-
-    const connect = response.connect();
-    const uniqueConnectionId = `${phonenumber}-${Date.now()}`;
-    connect.stream({ url: `wss://${process.env.SERVER}/connection` });
-
-    response.hangup();
-
-    res.type("text/xml");
-    res.end(response.toString());
-  } catch (err) {
-    console.log(err);
-  }
+  console.log("incoming");
+  const response = new VoiceResponse();
+  response.dial("+15312157226");
+  res.type("text/xml");
+  res.end(response.toString());
 });
 
 app.post("/outcoming", async (req, res) => {
