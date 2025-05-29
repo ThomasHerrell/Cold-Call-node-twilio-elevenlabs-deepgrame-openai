@@ -67,7 +67,7 @@ router.post('/make-call', async (req, res) => {
       fs.writeFileSync(`${scriptsDir}/${contactItem.phonenumber}.txt`, contactData, 'utf8');
     });
     if (!fs.existsSync(`${scriptsDir}/${ai_profile_name}.txt`)) {
-      fs.writeFileSync(`${scriptsDir}/${ai_profile_name}.txt`, content, 'utf8');
+      fs.writeFileSync(`${scriptsDir}/${ai_profile_name}.txt`, JSON.stringify(content), 'utf8');
     }
 
   console.log(`contact : ${JSON.stringify(contact)}`);  
