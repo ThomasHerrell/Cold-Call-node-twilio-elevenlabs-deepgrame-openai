@@ -58,8 +58,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use("/api", makeCallRouter);
 app.use("/api", callStatusRouter);
 
@@ -95,6 +95,7 @@ app.post("/incoming", async (req, res) => {
 });
 
 app.post("/outcoming", async (req, res) => {
+  console.log("outcoming");
   let phonenumber = req.query.phonenumber; // Assuming contact_ID is passed in the query to identify the file
   const filePath = `./scripts/${phonenumber}.txt`;
   console.log(`filePath : ${filePath}`)

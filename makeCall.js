@@ -6,6 +6,8 @@ const { makeschedule } = require('./services/make-schedule');
 const fs = require('fs');
 const path = require('path');
 
+console.log(`Server URL: ${process.env.SERVER}`);
+
 router.post
 
 router.post('/make-call', async (req, res) => {
