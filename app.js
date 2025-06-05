@@ -89,7 +89,7 @@ if (brazilHour >= 5 && brazilHour < 12) {
 app.post("/incoming", async (req, res) => {
   console.log("incoming");
   const response = new VoiceResponse();
-  response.dial("+15312157226");
+  response.dial("+15312157299");
   res.type("text/xml");
   res.end(response.toString());
 });
