@@ -53,7 +53,7 @@ ExpressWs(app);
 const PORT = process.env.PORT || 3000;
 app.use(
   cors({
-    origin: "http://localhost:8080",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
