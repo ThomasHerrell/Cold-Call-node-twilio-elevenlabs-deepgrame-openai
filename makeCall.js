@@ -9,33 +9,15 @@ const twilio = require('twilio');
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const cors = require('cors');
 
-// Enable pre-flight across-the-board
-router.options('*', cors());
-
-// Apply CORS middleware with specific options
+// Apply CORS middleware to all routes in this router
 router.use(cors({
-  origin: true,
-  credentials: true,
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
-
-// Additional headers for ngrok
-router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({
-      body: "OK"
-    });
-  }
-  
-  next();
-});
 
 console.log(`Server URL: ${process.env.SERVER}`);
 
@@ -112,13 +94,18 @@ router.post('/make-call', async (req, res) => {
 
   // Save AI profile if it doesn't exist
   try {
-    const aiProfileRef = doc(db, 'ai_profiles', ai_profile_name);
-    const aiProfileDoc = await getDoc(aiProfileRef);
-    if (!aiProfileDoc.exists()) {
-      await setDoc(aiProfileRef, cleanUndefinedValues({ content: content }));
+    if (ai_profile_name && typeof ai_profile_name === 'string' && ai_profile_name.trim() !== '') {
+      const aiProfileRef = doc(db, 'ai_profiles', ai_profile_name);
+      const aiProfileDoc = await getDoc(aiProfileRef);
+      if (!aiProfileDoc.exists()) {
+        await setDoc(aiProfileRef, cleanUndefinedValues({ content: content }));
+      }
+    } else {
+      console.log('Skipping AI profile save: Invalid or missing ai_profile_name');
     }
   } catch (error) {
     console.error('Error saving AI profile to Firebase:', error);
+    // Continue execution even if AI profile save fails
   }
 
   console.log(`contact : ${JSON.stringify(contact)}`);  
