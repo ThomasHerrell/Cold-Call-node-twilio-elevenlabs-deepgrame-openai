@@ -22,6 +22,7 @@
     "elevenlabs-node": "^2.0.3",
     "express": "^4.19.2",
     "express-ws": "^5.0.2",
+    "firebase": "^11.9.0",
     "global-tunnel-ng": "^2.7.1",
     "node-fetch": "^2.7.0",
     "openai": "^4.20.1",

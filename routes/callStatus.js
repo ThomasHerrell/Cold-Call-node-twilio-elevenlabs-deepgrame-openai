@@ -1,51 +1,69 @@
 const express = require('express');
 const router = express.Router();
 const twilio = require('twilio');
-const fs = require('fs');
-const path = require('path');
+const { db } = require('../firebase/firebaseConfig');
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
 const { leaveVoicemail, loadContactInfo } = require('../services/voicemail-service');
+const { collection, doc, setDoc, getDoc, getDocs } = require('firebase/firestore');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const client = twilio(accountSid, authToken);
 
-// 파일 기반 저장소 설정
-const STATUS_DIR = path.join(__dirname, '..', 'call-statuses');
-if (!fs.existsSync(STATUS_DIR)) {
-    fs.mkdirSync(STATUS_DIR);
-}
-
-
-const saveCallStatus = (callSid, status) => {
-    const filePath = path.join(STATUS_DIR, `${callSid}.json`);
-    fs.writeFileSync(filePath, JSON.stringify(status, null, 2), 'utf8');
+// Helper function to clean undefined values
+const cleanUndefinedValues = (obj) => {
+    const cleaned = {};
+    Object.entries(obj).forEach(([key, value]) => {
+        if (value === undefined) {
+            cleaned[key] = null;
+        } else if (typeof value === 'object' && value !== null) {
+            cleaned[key] = cleanUndefinedValues(value);
+        } else {
+            cleaned[key] = value;
+        }
+    });
+    return cleaned;
 };
 
-
-const loadCallStatus = (callSid) => {
-    const filePath = path.join(STATUS_DIR, `${callSid}.json`);
-    if (fs.existsSync(filePath)) {
-        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+// Save call status to Firestore
+const saveCallStatus = async (callSid, status) => {
+    try {
+        const cleanedStatus = cleanUndefinedValues(status);
+        const callRef = doc(db, 'callStatuses', callSid);
+        await setDoc(callRef, cleanedStatus, { merge: true });
+    } catch (error) {
+        console.error('Error saving call status to Firestore:', error);
+        throw error;
     }
-    return null;
 };
 
+// Load call status from Firestore
+const loadCallStatus = async (callSid) => {
+    try {
+        const callRef = doc(db, 'callStatuses', callSid);
+        const docSnap = await getDoc(callRef);
+        return docSnap.exists() ? docSnap.data() : null;
+    } catch (error) {
+        console.error('Error loading call status from Firestore:', error);
+        return null;
+    }
+};
 
-const loadAllCallStatuses = () => {
-    const statuses = {};
-    if (fs.existsSync(STATUS_DIR)) {
-        fs.readdirSync(STATUS_DIR).forEach(file => {
-            if (file.endsWith('.json')) {
-                const callSid = file.replace('.json', '');
-                statuses[callSid] = loadCallStatus(callSid);
-            }
+// Load all call statuses from Firestore
+const loadAllCallStatuses = async () => {
+    try {
+        const callStatusesRef = collection(db, 'callStatuses');
+        const snapshot = await getDocs(callStatusesRef);
+        const statuses = {};
+        snapshot.forEach(doc => {
+            statuses[doc.id] = doc.data();
         });
+        return statuses;
+    } catch (error) {
+        console.error('Error loading all call statuses from Firestore:', error);
+        return {};
     }
-    return statuses;
 };
-
-
 
 router.post('/call-status', async (req, res) => {
     try {
@@ -54,7 +72,6 @@ router.post('/call-status', async (req, res) => {
         console.log('Received request query:', req.query);
         console.log('Received request params:', req.params);
 
-        // Get callSid from either query parameters or request body
         const callSid = req.query.callSid || req.body.CallSid;
         
         if (!callSid) {
@@ -73,75 +90,138 @@ router.post('/call-status', async (req, res) => {
 
         console.log('Processing call status update for SID:', callSid, 'with status:', callStatus);
 
-
-        const statusMap = {
-            'initiated': 'pending',
-            'queued': 'pending',
-            'ringing': 'in-progress',
-            'in-progress': 'in-progress',
-            'completed': 'completed',
-            'busy': 'failed',
-            'no-answer': 'failed',
-            'failed': 'failed',
-            'canceled': 'failed'
+        // Define detailed status mapping
+        const statusDetails = {
+            'initiated': {
+                status: 'initiated',
+                description: 'Call has been initiated',
+                category: 'in-progress'
+            },
+            'queued': {
+                status: 'queued',
+                description: 'Call is queued',
+                category: 'in-progress'
+            },
+            'ringing': {
+                status: 'ringing',
+                description: 'Phone is ringing',
+                category: 'in-progress'
+            },
+            'in-progress': {
+                status: 'in-progress',
+                description: 'Call is in progress',
+                category: 'in-progress'
+            },
+            'completed': {
+                status: 'completed',
+                description: 'Call completed successfully',
+                category: 'completed'
+            },
+            'busy': {
+                status: 'busy',
+                description: 'Recipient phone was busy',
+                category: 'failed'
+            },
+            'no-answer': {
+                status: 'no-answer',
+                description: 'No answer from recipient',
+                category: 'failed'
+            },
+            'failed': {
+                status: 'failed',
+                description: 'Call failed',
+                category: 'failed'
+            },
+            'canceled': {
+                status: 'canceled',
+                description: 'Call was canceled',
+                category: 'failed'
+            }
         };
 
-        const mappedStatus = statusMap[callStatus] || 'failed';
-
-        const currentStatus = loadCallStatus(callSid) || {
+        const currentStatus = await loadCallStatus(callSid) || {
             id: Date.now(),
             clientName: 'Unknown',
             phone: to || 'Unknown',
-            status: 'pending',
+            status: 'initiated',
+            statusHistory: [],
             timestamp: new Date().toISOString()
         };
 
+        // Ensure statusHistory is an array
+        if (!Array.isArray(currentStatus.statusHistory)) {
+            currentStatus.statusHistory = [];
+        }
+
+        const statusDetail = statusDetails[callStatus] || {
+            status: callStatus,
+            description: 'Unknown status',
+            category: 'unknown'
+        };
+
+        // Create status history entry
+        const statusHistoryEntry = {
+            timestamp: new Date().toISOString(),
+            status: callStatus,
+            details: statusDetail,
+            duration: callDuration || 0,
+            errorCode: req.body.ErrorCode || null,
+            errorMessage: req.body.ErrorMessage || null,
+            sipResponseCode: req.body.SipResponseCode || null
+        };
+
+        // Update the status object
         const updatedStatus = {
             ...currentStatus,
-            status: mappedStatus,
+            status: statusDetail.status,
+            statusCategory: statusDetail.category,
+            statusDescription: statusDetail.description,
             duration: callDuration || 0,
             timestamp: new Date().toISOString(),
             direction: direction || 'outbound',
             parentCallSid: parentCallSid || null,
-            lastUpdate: {
-                status: callStatus,
-                timestamp: new Date().toISOString(),
-                errorCode: req.body.ErrorCode,
-                errorMessage: req.body.ErrorMessage,
-                sipResponseCode: req.body.SipResponseCode
-            }
+            lastUpdate: statusHistoryEntry,
+            // Add new status to history array
+            statusHistory: [...currentStatus.statusHistory, statusHistoryEntry]
         };
 
-        // Check if the call was not answered and attempt to leave voicemail
-        if (callStatus === 'no-answer' || callStatus === 'busy') {
-            // Get the contact information for this phone number
+        // Handle voicemail for failed calls
+        if (['busy', 'no-answer', 'failed', 'canceled'].includes(callStatus)) {
             try {
                 const phoneNumber = to;
-                
-                // Leave voicemail using our service
                 const voicemailSid = await leaveVoicemail(phoneNumber, client);
                 
                 if (voicemailSid) {
-                    // Update the status to include voicemail information
-                    updatedStatus.voicemail = {
+                    const voicemailStatus = {
                         sid: voicemailSid,
                         timestamp: new Date().toISOString(),
                         status: 'initiated'
                     };
                     
+                    updatedStatus.voicemail = voicemailStatus;
+                    updatedStatus.statusHistory.push({
+                        ...statusHistoryEntry,
+                        voicemail: voicemailStatus
+                    });
+                    
                     console.log(`Voicemail initiated for call ${callSid} with voicemail SID ${voicemailSid}`);
                 }
             } catch (vmError) {
                 console.error('Error processing voicemail:', vmError);
+                updatedStatus.statusHistory.push({
+                    timestamp: new Date().toISOString(),
+                    status: 'voicemail-failed',
+                    error: vmError.message
+                });
             }
         }
 
-        saveCallStatus(callSid, updatedStatus);
+        await saveCallStatus(callSid, updatedStatus);
 
         console.log('Call Status Update:', {
             callSid,
             originalStatus: callStatus,
-            mappedStatus: mappedStatus,
+            currentStatus: statusDetail,
             duration: callDuration,
             to,
             from,
@@ -158,7 +238,6 @@ router.post('/call-status', async (req, res) => {
     }
 });
 
-// Endpoint to handle voicemail status updates
 router.post('/voicemail-status', async (req, res) => {
     try {
         console.log('Received voicemail status update:', req.body);
@@ -172,12 +251,10 @@ router.post('/voicemail-status', async (req, res) => {
         } = req.body;
         
         if (callSid) {
-            // Check if this voicemail is associated with a previous call
-            const allStatuses = loadAllCallStatuses();
+            const allStatuses = await loadAllCallStatuses();
             
             for (const [originalCallSid, status] of Object.entries(allStatuses)) {
                 if (status.voicemail && status.voicemail.sid === callSid) {
-                    // Update the original call's status with voicemail information
                     status.voicemail.status = callStatus;
                     
                     if (recordingUrl) {
@@ -188,10 +265,9 @@ router.post('/voicemail-status', async (req, res) => {
                         status.voicemail.recordingSid = recordingSid;
                     }
                     
-                    saveCallStatus(originalCallSid, status);
+                    await saveCallStatus(originalCallSid, status);
                     console.log(`Updated original call ${originalCallSid} with voicemail status: ${callStatus}`);
                     
-                    // If voicemail failed, try sending an SMS as fallback
                     if (callStatus === 'failed' && phoneNumber) {
                         try {
                             const contactInfo = loadContactInfo(phoneNumber);
@@ -206,14 +282,13 @@ router.post('/voicemail-status', async (req, res) => {
                             
                             console.log(`SMS fallback sent with SID: ${sms.sid} for call ${originalCallSid}`);
                             
-                            // Update status with SMS information
                             status.smsFallback = {
                                 sid: sms.sid,
                                 timestamp: new Date().toISOString(),
                                 status: 'sent'
                             };
                             
-                            saveCallStatus(originalCallSid, status);
+                            await saveCallStatus(originalCallSid, status);
                         } catch (smsError) {
                             console.error('Error sending SMS fallback:', smsError);
                         }
@@ -231,10 +306,10 @@ router.post('/voicemail-status', async (req, res) => {
     }
 });
 
-router.get('/call-status/:callSid', (req, res) => {
+router.post('/call-status/:callSid', async (req, res) => {
     try {
         const callSid = req.params.callSid;
-        const callStatus = loadCallStatus(callSid);
+        const callStatus = await loadCallStatus(callSid);
 
         if (callStatus) {
             res.json({
@@ -256,9 +331,9 @@ router.get('/call-status/:callSid', (req, res) => {
     }
 });
 
-router.get('/call-statuses', (req, res) => {
+router.get('/call-statuses', async (req, res) => {
     try {
-        const allStatuses = loadAllCallStatuses();
+        const allStatuses = await loadAllCallStatuses();
         const statusesArray = Object.entries(allStatuses).map(([callSid, status]) => ({
             callSid,
             ...status
@@ -277,7 +352,6 @@ router.get('/call-statuses', (req, res) => {
     }
 });
 
-// Test endpoint to send a voicemail directly
 router.post('/test-voicemail', async (req, res) => {
     try {
         const { phoneNumber } = req.body;
@@ -289,10 +363,7 @@ router.post('/test-voicemail', async (req, res) => {
             });
         }
         
-        // Load contact info
         const contactInfo = loadContactInfo(phoneNumber);
-        
-        // Leave voicemail
         const voicemailSid = await leaveVoicemail(phoneNumber, contactInfo, client);
         
         if (voicemailSid) {
