@@ -308,25 +308,31 @@ router.post('/voicemail-status', async (req, res) => {
 
 router.post('/call-status/:callSid', async (req, res) => {
     try {
-        const callSid = req.params.callSid;
-        const callStatus = await loadCallStatus(callSid);
-
-        if (callStatus) {
-            res.json({
-                success: true,
-                data: callStatus
-            });
-        } else {
-            res.status(404).json({
-                success: false,
-                message: 'Call status not found'
-            });
-        }
+        const { callSid } = req.params;
+        
+        // Get call details directly from Twilio
+        const call = await client.calls(callSid).fetch();
+        
+        res.json({
+            success: true,
+            data: {
+                callSid: call.sid,
+                status: call.status,
+                duration: call.duration,
+                startTime: call.startTime,
+                endTime: call.endTime,
+                direction: call.direction,
+                from: call.from,
+                to: call.to,
+                price: call.price,
+                priceUnit: call.priceUnit
+            }
+        });
     } catch (error) {
-        console.error('Error retrieving call status:', error);
+        console.error('Error fetching call status:', error);
         res.status(500).json({
             success: false,
-            message: 'Internal Server Error'
+            error: error.message
         });
     }
 });
