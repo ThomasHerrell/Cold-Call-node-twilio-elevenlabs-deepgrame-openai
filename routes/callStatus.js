@@ -67,10 +67,6 @@ const loadAllCallStatuses = async () => {
 
 router.post('/call-status', async (req, res) => {
     try {
-        console.log('Received request headers:', req.headers);
-        console.log('Raw request body:', req.body);
-        console.log('Received request query:', req.query);
-        console.log('Received request params:', req.params);
 
         const callSid = req.query.callSid || req.body.CallSid;
         
@@ -88,7 +84,7 @@ router.post('/call-status', async (req, res) => {
             ParentCallSid: parentCallSid
         } = req.body;
 
-        console.log('Processing call status update for SID:', callSid, 'with status:', callStatus);
+        // console.log('Processing call status update for SID:', callSid, 'with status:', callStatus);
 
         // Define detailed status mapping
         const statusDetails = {
@@ -217,19 +213,6 @@ router.post('/call-status', async (req, res) => {
         }
 
         await saveCallStatus(callSid, updatedStatus);
-
-        console.log('Call Status Update:', {
-            callSid,
-            originalStatus: callStatus,
-            currentStatus: statusDetail,
-            duration: callDuration,
-            to,
-            from,
-            direction,
-            errorCode: req.body.ErrorCode,
-            errorMessage: req.body.ErrorMessage,
-            sipResponseCode: req.body.SipResponseCode
-        });
 
         res.status(200).send('OK');
     } catch (error) {
