@@ -58,11 +58,16 @@ const generateVoicemailTwiML = (contactInfo) => {
     
     // Repeat the callback number to ensure it's captured
     twiml.pause({ length: 1 });
+    
+    // Safely handle FROM_NUMBER with fallback
+    const fromNumber = '+15594842326'
+    const formattedNumber = fromNumber.includes('+') ? fromNumber.split('').join(' ') : fromNumber;
+    
     twiml.say({
         voice: 'Polly.Joanna',
         language: 'en-US',
         rate: '0.7'
-    }, `Again, our number is ${process.env.FROM_NUMBER.split('').join(' ')}. Thank you.`);
+    }, `Again, our number is ${formattedNumber}. Thank you.`);
     
     // Add final pause to ensure the voicemail system captures everything
     twiml.pause({ length: 2 });
@@ -86,7 +91,11 @@ const generateVoiceEmailTwiML = (contactInfo) => {
     message += 'this is an important voice email regarding your account. ';
     message += 'We attempted to reach you but were unable to connect. ';
     message += 'Please call us back at your earliest convenience at ';
-    message += `${process.env.FROM_NUMBER.split('').join(' ')}. `;
+    
+    // Safely handle FROM_NUMBER with fallback
+    const fromNumber = '+15594842326'
+    const formattedNumber = fromNumber.includes('+') ? fromNumber.split('').join(' ') : fromNumber;
+    message += `${formattedNumber}. `;
     message += 'Thank you for your attention to this matter.';
 
     twiml.say({
@@ -113,6 +122,12 @@ const leaveVoicemail = async (phoneNumber, twilioClient, type = 'voicemail') => 
     try {
         console.log(`Attempting to leave ${type} for ${phoneNumber}`);
         
+        // Check if FROM_NUMBER is available
+        if (!process.env.FROM_NUMBER) {
+            console.error('FROM_NUMBER environment variable is not set');
+            return null;
+        }
+        
         // Try to load contact info but don't require it
         let contactInfo = null;
         try {
@@ -135,7 +150,7 @@ const leaveVoicemail = async (phoneNumber, twilioClient, type = 'voicemail') => 
             to: phoneNumber,
             from: process.env.FROM_NUMBER,
             record: true,
-            timeout: 45,
+            timeout: 30,
             sendDigits: '#1', // Send digits to navigate voicemail system
             method: 'POST',
             statusCallback: `https://${process.env.SERVER}/api/voicemail-status`,

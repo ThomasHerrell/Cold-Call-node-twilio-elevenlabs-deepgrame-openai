@@ -280,7 +280,8 @@ router.post('/voicemail-status', async (req, res) => {
                             const contactInfo = loadContactInfo(phoneNumber);
                             const name = contactInfo?.fullname || '';
                             const messageType = status.voiceMessage.type === 'voice-email' ? 'voice email' : 'voicemail';
-                            const smsMessage = `Hello${name ? ' ' + name : ''}, we tried to leave you a ${messageType} but couldn't connect. Please call us back at ${process.env.FROM_NUMBER} at your earliest convenience. Thank you.`;
+                            const fromNumber = '+15594842326'
+                            const smsMessage = `Hello${name ? ' ' + name : ''}, we tried to leave you a ${messageType} but couldn't connect. Please call us back at ${fromNumber} at your earliest convenience. Thank you.`;
                             
                             const sms = await client.messages.create({
                                 body: smsMessage,
