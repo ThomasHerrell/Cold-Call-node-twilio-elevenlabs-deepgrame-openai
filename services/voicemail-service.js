@@ -61,13 +61,13 @@ const generateVoicemailTwiML = (contactInfo) => {
     
     // Safely handle FROM_NUMBER with fallback
     const fromNumber = '+15594842326'
-    const formattedNumber = fromNumber.includes('+') ? fromNumber.split('').join(' ') : fromNumber;
+
     
     twiml.say({
         voice: 'Polly.Joanna',
         language: 'en-US',
         rate: '0.7'
-    }, `Again, our number is ${formattedNumber}. Thank you.`);
+    }, `Again, our number is ${fromNumber}. Thank you.`);
     
     // Add final pause to ensure the voicemail system captures everything
     twiml.pause({ length: 2 });
@@ -94,8 +94,7 @@ const generateVoiceEmailTwiML = (contactInfo) => {
     
     // Safely handle FROM_NUMBER with fallback
     const fromNumber = '+15594842326'
-    const formattedNumber = fromNumber.includes('+') ? fromNumber.split('').join(' ') : fromNumber;
-    message += `${formattedNumber}. `;
+    message += `${fromNumber}. `;
     message += 'Thank you for your attention to this matter.';
 
     twiml.say({
