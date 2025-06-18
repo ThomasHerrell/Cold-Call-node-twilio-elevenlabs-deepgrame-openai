@@ -148,6 +148,19 @@ router.post('/make-call', async (req, res) => {
             timeout: 20
         });
 
+        // Add detailed logging for debugging
+        console.log('Call details:', {
+            sid: call.sid,
+            status: call.status,
+            direction: call.direction,
+            from: call.from,
+            to: call.to,
+            dateCreated: call.dateCreated,
+            price: call.price,
+            errorCode: call.errorCode,
+            errorMessage: call.errorMessage
+        });
+
         console.log('Created call with SID:', call.sid);
 
         try {

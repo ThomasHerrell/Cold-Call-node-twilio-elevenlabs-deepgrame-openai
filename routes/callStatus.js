@@ -3,7 +3,7 @@ const router = express.Router();
 const twilio = require('twilio');
 const { db } = require('../firebase/firebaseConfig');
 const VoiceResponse = require('twilio').twiml.VoiceResponse;
-const { leaveVoicemail, loadContactInfo } = require('../services/voicemail-service');
+const { leaveVoicemail, sendVoiceEmail, loadContactInfo } = require('../services/voicemail-service');
 const { collection, doc, setDoc, getDoc, getDocs } = require('firebase/firestore');
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -185,28 +185,42 @@ router.post('/call-status', async (req, res) => {
         if (['busy', 'no-answer', 'failed', 'canceled'].includes(callStatus)) {
             try {
                 const phoneNumber = to;
-                const voicemailSid = await leaveVoicemail(phoneNumber, client);
+                const contactInfo = loadContactInfo(phoneNumber);
                 
-                if (voicemailSid) {
-                    const voicemailStatus = {
-                        sid: voicemailSid,
+                // For busy and no-answer, send voice email instead of regular voicemail
+                let voiceMessageSid = null;
+                let voiceMessageType = 'voicemail';
+                
+                if (['busy', 'no-answer'].includes(callStatus)) {
+                    voiceMessageSid = await sendVoiceEmail(phoneNumber, client);
+                    voiceMessageType = 'voice-email';
+                } else {
+                    voiceMessageSid = await leaveVoicemail(phoneNumber, client);
+                }
+                
+                if (voiceMessageSid) {
+                    const voiceMessageStatus = {
+                        sid: voiceMessageSid,
+                        type: voiceMessageType,
                         timestamp: new Date().toISOString(),
-                        status: 'initiated'
+                        status: 'initiated',
+                        originalCallStatus: callStatus,
+                        contactInfo: contactInfo
                     };
                     
-                    updatedStatus.voicemail = voicemailStatus;
+                    updatedStatus.voiceMessage = voiceMessageStatus;
                     updatedStatus.statusHistory.push({
                         ...statusHistoryEntry,
-                        voicemail: voicemailStatus
+                        voiceMessage: voiceMessageStatus
                     });
                     
-                    console.log(`Voicemail initiated for call ${callSid} with voicemail SID ${voicemailSid}`);
+                    console.log(`${voiceMessageType} initiated for call ${callSid} with SID ${voiceMessageSid}`);
                 }
             } catch (vmError) {
-                console.error('Error processing voicemail:', vmError);
+                console.error('Error processing voice message:', vmError);
                 updatedStatus.statusHistory.push({
                     timestamp: new Date().toISOString(),
-                    status: 'voicemail-failed',
+                    status: 'voice-message-failed',
                     error: vmError.message
                 });
             }
@@ -223,7 +237,7 @@ router.post('/call-status', async (req, res) => {
 
 router.post('/voicemail-status', async (req, res) => {
     try {
-        console.log('Received voicemail status update:', req.body);
+        console.log('Received voice message status update:', req.body);
         
         const {
             CallSid: callSid,
@@ -237,25 +251,36 @@ router.post('/voicemail-status', async (req, res) => {
             const allStatuses = await loadAllCallStatuses();
             
             for (const [originalCallSid, status] of Object.entries(allStatuses)) {
-                if (status.voicemail && status.voicemail.sid === callSid) {
-                    status.voicemail.status = callStatus;
+                if (status.voiceMessage && status.voiceMessage.sid === callSid) {
+                    status.voiceMessage.status = callStatus;
                     
                     if (recordingUrl) {
-                        status.voicemail.recordingUrl = recordingUrl;
+                        status.voiceMessage.recordingUrl = recordingUrl;
                     }
                     
                     if (recordingSid) {
-                        status.voicemail.recordingSid = recordingSid;
+                        status.voiceMessage.recordingSid = recordingSid;
                     }
                     
-                    await saveCallStatus(originalCallSid, status);
-                    console.log(`Updated original call ${originalCallSid} with voicemail status: ${callStatus}`);
+                    // Add status update to history
+                    status.statusHistory.push({
+                        timestamp: new Date().toISOString(),
+                        status: `voice-message-${callStatus}`,
+                        voiceMessageSid: callSid,
+                        recordingUrl: recordingUrl,
+                        recordingSid: recordingSid
+                    });
                     
+                    await saveCallStatus(originalCallSid, status);
+                    console.log(`Updated original call ${originalCallSid} with voice message status: ${callStatus}`);
+                    
+                    // Send SMS fallback if voice message fails
                     if (callStatus === 'failed' && phoneNumber) {
                         try {
                             const contactInfo = loadContactInfo(phoneNumber);
                             const name = contactInfo?.fullname || '';
-                            const smsMessage = `Hello${name ? ' ' + name : ''}, we tried to reach you but couldn't connect. Please call us back at ${process.env.FROM_NUMBER} at your earliest convenience. Thank you.`;
+                            const messageType = status.voiceMessage.type === 'voice-email' ? 'voice email' : 'voicemail';
+                            const smsMessage = `Hello${name ? ' ' + name : ''}, we tried to leave you a ${messageType} but couldn't connect. Please call us back at ${process.env.FROM_NUMBER} at your earliest convenience. Thank you.`;
                             
                             const sms = await client.messages.create({
                                 body: smsMessage,
@@ -268,7 +293,8 @@ router.post('/voicemail-status', async (req, res) => {
                             status.smsFallback = {
                                 sid: sms.sid,
                                 timestamp: new Date().toISOString(),
-                                status: 'sent'
+                                status: 'sent',
+                                reason: `voice-message-${callStatus}`
                             };
                             
                             await saveCallStatus(originalCallSid, status);
@@ -284,7 +310,7 @@ router.post('/voicemail-status', async (req, res) => {
         
         res.status(200).send('OK');
     } catch (error) {
-        console.error('Error processing voicemail status update:', error);
+        console.error('Error processing voice message status update:', error);
         res.status(500).send('Internal Server Error');
     }
 });
@@ -295,6 +321,9 @@ router.post('/call-status/:callSid', async (req, res) => {
         
         // Get call details directly from Twilio
         const call = await client.calls(callSid).fetch();
+        
+        // Get stored call status from Firestore
+        const storedStatus = await loadCallStatus(callSid);
         
         res.json({
             success: true,
@@ -308,7 +337,11 @@ router.post('/call-status/:callSid', async (req, res) => {
                 from: call.from,
                 to: call.to,
                 price: call.price,
-                priceUnit: call.priceUnit
+                priceUnit: call.priceUnit,
+                // Include voice message information if available
+                voiceMessage: storedStatus?.voiceMessage || null,
+                statusHistory: storedStatus?.statusHistory || [],
+                smsFallback: storedStatus?.smsFallback || null
             }
         });
     } catch (error) {
@@ -369,6 +402,43 @@ router.post('/test-voicemail', async (req, res) => {
         }
     } catch (error) {
         console.error('Error in test voicemail endpoint:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal Server Error',
+            error: error.message
+        });
+    }
+});
+
+router.post('/test-voice-email', async (req, res) => {
+    try {
+        const { phoneNumber } = req.body;
+        
+        if (!phoneNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Phone number is required'
+            });
+        }
+        
+        const contactInfo = loadContactInfo(phoneNumber);
+        const voiceEmailSid = await sendVoiceEmail(phoneNumber, client);
+        
+        if (voiceEmailSid) {
+            res.json({
+                success: true,
+                message: `Voice email initiated with SID: ${voiceEmailSid}`,
+                voiceEmailSid,
+                contactInfo
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to initiate voice email'
+            });
+        }
+    } catch (error) {
+        console.error('Error in test voice email endpoint:', error);
         res.status(500).json({
             success: false,
             message: 'Internal Server Error',
